@@ -1,18 +1,19 @@
 import { computed, ref, reactive } from 'vue';
+import clonedeep from 'lodash.clonedeep'
 
 import { defineStore } from 'pinia';
 
-import NoteType from '../utils/types/noteType';
-import TaskType from "../utils/types/taskType";
-
+import type NoteType from '../utils/types/noteType';
 import { NotesService } from '../utils/classes/Notes';
 
-export const useNotesStore = defineStore('notes', () => {
-  const notes = new NotesService();
+const notes = new NotesService();
 
-  const noteList = reactive(notes.getNotes());
-  const unsavedNote = reactive(NotesService.generateEmptyNote());
+export const useNotesStore = defineStore('notes', () => {
+  const noteList = ref(notes.getNotes());
+  const unsavedNote = reactive<NoteType>(NotesService.generateEmptyNote());
   const selectedNoteId = ref(0);
+
+  const notesAmount = ref(noteList.value.length)
 
   const emptyTaskAmount = computed(() => unsavedNote
       .tasks
@@ -21,12 +22,11 @@ export const useNotesStore = defineStore('notes', () => {
   );
 
 
-  const rewriteUnsavedNote = (newData: Partial<NoteType> = NotesService.generateEmptyNote()): void => {
-    let key: keyof NoteType;
-
-    for (key in newData) {
-      if (unsavedNote[key] !== undefined) {
-        unsavedNote[key] = newData[key] as NoteType[keyof NoteType]; // TODO нужна помощь. Как сказать тайпскрипту об их идентичности?
+  const rewriteUnsavedNote = (newData: NoteType = NotesService.generateEmptyNote()): void => {
+    const copiedNote = clonedeep(newData);
+    for (const key in copiedNote) {
+      if (copiedNote.hasOwnProperty(key) && key in unsavedNote) {
+        unsavedNote[key as keyof NoteType] = copiedNote[key as keyof NoteType]!;
       }
     }
 
@@ -36,6 +36,7 @@ export const useNotesStore = defineStore('notes', () => {
   const addEmptyTasks = (amount = 1): void => {
     unsavedNote.tasks.push(...NotesService.addEmptyTasks(amount));
   }
+
   const flushUnsavedNote = () => {
     rewriteUnsavedNote();
   }
@@ -50,6 +51,7 @@ export const useNotesStore = defineStore('notes', () => {
       if (!unsavedNote.title) {
         alert('Заголовок не может быть пуст');
         reject();
+        return;
       }
 
       notes.updateNoteById(selectedNoteId.value, unsavedNote);
@@ -73,17 +75,31 @@ export const useNotesStore = defineStore('notes', () => {
     })
   }
 
-  const deleteNoteFromList = async (id: number = selectedNoteId.value) => {
-    return new Promise<void>((resolve, reject) => {
-      selectedNoteId.value = 0;
-      notes.deleteNoteById(id) ? resolve() : reject();
-    });
+  const deleteNoteFromList = (id: number = selectedNoteId.value) => {
+    notes.deleteNoteById(id);
+    selectedNoteId.value = 0;
+  }
+
+  const changeTaskChecked = (noteId: number, taskId: number) => {
+    const note = notes.getNoteById(noteId);
+    if (!note) {
+      return;
+    }
+
+    note.tasks = note.tasks.map((task) => {
+      if (task.id === taskId) {
+        return {...task, checked: !task.checked};
+      }
+
+      return task
+    })
+    notes.updateNoteById(noteId, note);
   }
 
   return {
     noteList,
     unsavedNote,
-
+    notesAmount,
     emptyTaskAmount,
 
     addEmptyTasks,
@@ -91,6 +107,7 @@ export const useNotesStore = defineStore('notes', () => {
     saveEditChanges,
     addNoteToList,
     deleteNoteFromList,
+    changeTaskChecked,
     selectNote,
   }
 })

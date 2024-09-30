@@ -8,19 +8,27 @@
       <div class="note-item-text">{{ props.modelValue.title }}</div>
     </template>
 
-    <Task v-for="task in props.modelValue.tasks" :modelValue="task" :allow-edit="props.allowEdit"/>
+    <template v-if="allowEdit">
+      <Task v-for="task in props.modelValue.tasks" :modelValue="task" allow-edit/>
+    </template>
+    <template v-else>
+      <Task v-for="task in notesForView" :modelValue="task" allow-check @check="checkHandler(task)"/>
+    </template>
+
   </div>
 </template>
 
 <script setup lang="ts">
-  import {PropType, computed} from 'vue';
+  import {PropType} from 'vue';
 
   import CustomInput from '../ui/CustomInput.vue';
   import Task from './TaskItem.vue';
 
-  import {useOrchestratorStore} from '../../pinia/orchestratorStore';
+  import type NoteType from '../../utils/types/noteType';
+  import type TaskType from '../../utils/types/taskType';
 
-  import NoteType from '../../utils/types/noteType';
+  import {useNotesStore} from '../../pinia/notesStore';
+  const notesStore = useNotesStore();
 
   const props = defineProps({
     modelValue: {
@@ -33,10 +41,14 @@
     },
   });
 
-  const orchestratorStore = useOrchestratorStore();
+  const notesForView = [
+      ...props.modelValue.tasks.filter((task) => !task.checked),
+      ...props.modelValue.tasks.filter((task) => task.checked)
+  ]
 
-
-  const shortNotes = computed(() => props.modelValue);
+  function checkHandler(task: TaskType) {
+    notesStore.changeTaskChecked(props.modelValue.id, task.id)
+  }
 </script>
 
 <style lang="stylus">

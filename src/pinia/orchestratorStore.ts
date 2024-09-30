@@ -27,6 +27,11 @@ export const useOrchestratorStore = defineStore('orchestrator', () => {
     }
   }
 
+  function goList() {
+    notesStore.flushUnsavedNote();
+    pagesStore.goTo(Pages.List);
+  }
+
   function goView(id: number) {
     notesStore.selectNote(id);
     pagesStore.goTo(Pages.View);
@@ -41,33 +46,44 @@ export const useOrchestratorStore = defineStore('orchestrator', () => {
     pagesStore.goTo(Pages.Create);
   }
 
-  async function saveNote() {
+  async function saveNote(id: number | undefined = undefined) {
     switch (curPage.value) {
       case Pages.Create:
         try {
           await notesStore.addNoteToList();
-          pagesStore.goToPrevious();
+          goList();
         } catch (e) {}
         break;
 
       case Pages.Edit:
         try {
           await notesStore.saveEditChanges();
-          pagesStore.goToPrevious();
+          if (id) {
+            goView(id);
+          }
         } catch (e) {}
         break;
     }
   }
 
-  async function deleteNote() {
-    try {
-      await notesStore.deleteNoteFromList();
-      pagesStore.goToPrevious();
-    } catch (e) {}
+  async function deleteNote(id: number) {
+    goView(id);
+    setTimeout(() => {
+      const result = confirm('Вы уверены, что хотите удалить документ?')
+
+      if (result) {
+        notesStore.deleteNoteFromList(id);
+        goList();
+      } else {
+        goBack();
+      }
+    }, 100)
+
   }
 
   return {
     goBack,
+    goList,
     goView,
     goEdit,
     goCreate,

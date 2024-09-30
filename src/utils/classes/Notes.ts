@@ -1,12 +1,12 @@
-import NoteType from '../../utils/types/noteType';
-import TaskType from '../../utils/types/taskType';
+import type NoteType from '../../utils/types/noteType';
+import type TaskType from '../../utils/types/taskType';
 
 export class NotesService {
   private notes: NoteType[] = [];
   private currentIndex: number = 1;
-  private selectedIndex: number = 0;
+  private static taskIndex: number = 1;
 
-  static generateEmptyNote() {
+  static generateEmptyNote(): NoteType {
     return {
       id: 0,
       title: '',
@@ -19,6 +19,7 @@ export class NotesService {
     
     for (let i = 0; i < amount; i++) {
       emptyTaskList.push({
+        id: this.taskIndex++,
         text: '',
         checked: false,
       } as TaskType)
@@ -59,12 +60,11 @@ export class NotesService {
     return false;
   }
 
-  deleteNoteById(id: number): boolean {
+  deleteNoteById(id: number) {
     const index = this.notes.findIndex((note) => note.id === id);
 
     if (index !== -1) {
       this.notes.splice(index, 1);
-      this.selectedIndex = 0;
       return true;
     }
 

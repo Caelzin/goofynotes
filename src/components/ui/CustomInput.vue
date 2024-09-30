@@ -34,8 +34,8 @@
 
   const emit = defineEmits(['update:modelValue']);
 
-  function emitInput (event: Event) {
-    emit('update:modelValue', event.target.value); //TODO тут после добавления value ругается, что делать?
+  function emitInput (event: InputEvent) {
+    emit('update:modelValue', event.target.value);
   }
 
 </script>

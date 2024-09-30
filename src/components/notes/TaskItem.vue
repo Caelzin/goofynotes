@@ -3,7 +3,8 @@
     <CustomCheckbox
         class="task-item-checkbox"
         v-model="props.modelValue.checked"
-        :disabled="!props.allowEdit"
+        :disabled="!props.allowCheck"
+        @input="checkHandler"
     />
 
     <template v-if="props.allowEdit">
@@ -26,7 +27,7 @@
   import CustomCheckbox from '../ui/CustomCheckbox.vue';
   import CustomInput from '../ui/CustomInput.vue';
 
-  import TaskType from '../../utils/types/taskType';
+  import type TaskType from '../../utils/types/taskType';
 
   const props = defineProps({
     modelValue: {
@@ -34,7 +35,14 @@
       required: true,
     },
     allowEdit: Boolean,
+    allowCheck: Boolean
   });
+
+  const emit = defineEmits(['check']);
+
+  function checkHandler() {
+    emit('check')
+  }
 
 </script>
 
